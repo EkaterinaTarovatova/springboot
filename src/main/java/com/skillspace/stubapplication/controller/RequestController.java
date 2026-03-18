@@ -57,7 +57,7 @@ public class RequestController {
     }
 
     @PostMapping("/postRequest")
-    public ResponseEntity<?> postRequest(
+    public ResponseEntity<PostPersonResponse> postRequest(
             @RequestBody PostRequest request
     ) {
         String name = request.getName();
