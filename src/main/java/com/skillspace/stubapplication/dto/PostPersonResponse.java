@@ -1,5 +1,6 @@
 package com.skillspace.stubapplication.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,6 +11,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PostPersonResponse {
-    private PostPersonDto Person1;
-    private PostPersonDto Person2;
+    @JsonProperty("Person1")
+    private PostPersonDto person1;
+    @JsonProperty("Person2")
+    private PostPersonDto person2;
 }
