@@ -9,7 +9,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Person {
-    private int id;
+public class PostRequest {
     private String name;
+    private String surname;
+    private Integer age;
 }

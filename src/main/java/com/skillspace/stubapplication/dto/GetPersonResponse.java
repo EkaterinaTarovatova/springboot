@@ -9,7 +9,6 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PersonResponse {
-    private Person Person1;
-
+public class GetPersonResponse {
+    private GetPersonDto Person1;
 }

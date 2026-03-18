@@ -1,21 +1,19 @@
 package com.skillspace.stubapplication.controller;
 
-import com.skillspace.stubapplication.dto.Person;
-import com.skillspace.stubapplication.dto.PersonResponse;
+import com.skillspace.stubapplication.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/app/v1")
 public class RequestController {
 
     private static final Logger logger = LoggerFactory.getLogger(RequestController.class);
 
-    @GetMapping("/app/v1/getRequest")
-    public ResponseEntity<PersonResponse> getRequest(
+    @GetMapping("/getRequest")
+    public ResponseEntity<GetPersonResponse> getRequest(
             @RequestParam String id,
             @RequestParam String name
     ) {
@@ -42,8 +40,8 @@ public class RequestController {
                 Thread.sleep(500);
             }
 
-            Person person = new Person(parsedId, name);
-            PersonResponse personResponse = new PersonResponse(person);
+            GetPersonDto person = new GetPersonDto(parsedId, name);
+            GetPersonResponse personResponse = new GetPersonResponse(person);
 
             logger.debug("Сформирован ответ: {}", personResponse);
 
@@ -57,5 +55,27 @@ public class RequestController {
             return ResponseEntity.internalServerError().build();
         }
     }
-}
 
+    @PostMapping("/postRequest")
+    public ResponseEntity<?> postRequest(
+            @RequestBody PostRequest request
+    ) {
+        String name = request.getName();
+        String surname = request.getSurname();
+        Integer age = request.getAge();
+        logger.info("Получен запрос с name={}, surname={}, age={}", name, surname, age);
+
+        if (name == null || surname == null || age == null) {
+            logger.error("Передаваемые значения в теле запроса не могут быть null");
+            return ResponseEntity.internalServerError().build();
+        }
+        PostPersonDto dto1 = new PostPersonDto(name, surname, age);
+        PostPersonDto dto2 = new PostPersonDto(surname, name, age * 2);
+
+        PostPersonResponse response = new PostPersonResponse(dto1, dto2);
+
+        logger.debug("Сформирован ответ: {}", response);
+
+        return ResponseEntity.ok(response);
+    }
+}
