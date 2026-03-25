@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 @Service
@@ -23,18 +22,25 @@ public class KafkaHandler {
     @KafkaListener(topics = "test-topic", groupId = "stubapplication")
     public void handleRequests(String request) {
         try {
-            JsonNode jsonNode = objectMapper.readTree(request);
-            if (jsonNode.has("id") && jsonNode.has("name")) {
-                GetKafkaRequest getKafkaRequest = objectMapper.treeToValue(jsonNode, GetKafkaRequest.class);
+
+            if (request.startsWith("GET ") && request.contains("/app/v1/getRequest?")) {
+                GetKafkaRequest getKafkaRequest = extractGetParams(request);
                 GetPersonResponse response = requestHandlerService.handleGetRequest(getKafkaRequest.getId(), getKafkaRequest.getName());
                 kafkaTemplate.send(RESPONSE_TOPIC_NAME, objectMapper.writeValueAsString(response));
-            } else if (jsonNode.has("name") && jsonNode.has("surname") && jsonNode.has("age")) {
-                PostRequest postRequest = objectMapper.treeToValue(jsonNode, PostRequest.class);
-                PostPersonResponse response = requestHandlerService.handlePostRequest(postRequest.getName(), postRequest.getSurname(), postRequest.getAge());
-                kafkaTemplate.send(RESPONSE_TOPIC_NAME, objectMapper.writeValueAsString(response));
-            } else {
-                kafkaTemplate.send(RESPONSE_TOPIC_NAME, "Нет логики для обработки этого запроса.");
+                return;
+            } else if (request.startsWith("POST ") && request.contains("/app/v1/postRequest")) {
+                PostRequest postRequest = extractPostRequest(request);
+                if (postRequest != null) {
+                    PostPersonResponse response = requestHandlerService.handlePostRequest(
+                            postRequest.getName(),
+                            postRequest.getSurname(),
+                            postRequest.getAge()
+                    );
+                    kafkaTemplate.send(RESPONSE_TOPIC_NAME, objectMapper.writeValueAsString(response));
+                    return;
+                }
             }
+            kafkaTemplate.send(RESPONSE_TOPIC_NAME, "Нет логики для обработки этого запроса.");
         } catch (InternalServerException e) {
             kafkaTemplate.send(RESPONSE_TOPIC_NAME, "500: " + e.getMessage());
         } catch (NumberFormatException e) {
@@ -43,6 +49,38 @@ public class KafkaHandler {
         } catch (Exception e) {
             String errorMessage = String.format("500: Непредвиденная ошибка при обработке запроса: %s, %s", e.getMessage(), e);
             kafkaTemplate.send(RESPONSE_TOPIC_NAME, errorMessage);
+        }
+    }
+
+    private GetKafkaRequest extractGetParams(String request) {
+        String queryPart = request.substring(request.indexOf("?") + 1);
+
+        String[] params = queryPart.split("&");
+
+        String id = null;
+        String name = null;
+
+        for (String param : params) {
+            if (param.startsWith("id=")) {
+                id = param.substring(3);
+            } else if (param.startsWith("name=")) {
+                name = param.substring(5);
+            }
+        }
+        return new GetKafkaRequest(id, name);
+    }
+
+    private PostRequest extractPostRequest(String request) {
+        int jsonStart = request.indexOf('{');
+        if (jsonStart == -1) {
+            return null;
+        }
+
+        try {
+            String jsonString = request.substring(jsonStart);
+            return objectMapper.readValue(jsonString, PostRequest.class);
+        } catch (Exception e) {
+            return null;
         }
     }
 }
