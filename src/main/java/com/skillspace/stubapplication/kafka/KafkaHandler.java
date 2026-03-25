@@ -22,13 +22,12 @@ public class KafkaHandler {
     @KafkaListener(topics = "test-topic", groupId = "stubapplication")
     public void handleRequests(String request) {
         try {
-
-            if (request.startsWith("GET ") && request.contains("/app/v1/getRequest?")) {
+            if (request.startsWith("Get ") && request.contains("/app/v1/getRequest?")) {
                 GetKafkaRequest getKafkaRequest = extractGetParams(request);
                 GetPersonResponse response = requestHandlerService.handleGetRequest(getKafkaRequest.getId(), getKafkaRequest.getName());
                 kafkaTemplate.send(RESPONSE_TOPIC_NAME, objectMapper.writeValueAsString(response));
                 return;
-            } else if (request.startsWith("POST ") && request.contains("/app/v1/postRequest")) {
+            } else if (request.startsWith("Post ") && request.contains("/app/v1/postRequest")) {
                 PostRequest postRequest = extractPostRequest(request);
                 if (postRequest != null) {
                     PostPersonResponse response = requestHandlerService.handlePostRequest(
